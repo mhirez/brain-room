@@ -1,0 +1,14 @@
+{
+  "name": "brain-room",
+  "main": "tools/web/leaderboard-worker.mjs",
+  "compatibility_date": "2026-09-01",
+  "workers_dev": true,
+  "assets": {
+    "directory": "./build/web",
+    "binding": "ASSETS"
+  },
+  "durable_objects": {
+    "bindings": [{ "name": "LEADERBOARD", "class_name": "Leaderboard" }]
+  },
+  "migrations": [{ "tag": "leaderboard-v1", "new_sqlite_classes": ["Leaderboard"] }]
+}
