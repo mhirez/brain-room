@@ -1,0 +1,17 @@
+// Cloudflare deployment for the browser build and shared leaderboard.
+// Cloudflare runs the build command (python -m tools.build_web), then `npx wrangler deploy`
+// publishes build/web. The name must match the project name in the Cloudflare dashboard.
+{
+  "name": "brain-room",
+  "main": "tools/web/leaderboard-worker.mjs",
+  "compatibility_date": "2026-09-01",
+  "workers_dev": true,          // keep brain-room.<account>.workers.dev as a second address
+  "assets": {
+    "directory": "./build/web",
+    "binding": "ASSETS"
+  },
+  "durable_objects": {
+    "bindings": [{ "name": "LEADERBOARD", "class_name": "Leaderboard" }]
+  },
+  "migrations": [{ "tag": "leaderboard-v1", "new_sqlite_classes": ["Leaderboard"] }]
+}

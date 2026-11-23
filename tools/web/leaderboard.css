@@ -1,0 +1,141 @@
+#game-title {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    display: flex;
+    overflow: auto;
+    padding: 24px 14px;
+    color: #eceef2;
+    box-sizing: border-box;
+}
+
+#game-title[hidden], #leaderboard-more[hidden] {
+    display: none;
+}
+
+.start-panel {
+    width: min(100%, 486px);
+    margin: auto;
+    padding: 20px clamp(14px, 4vw, 28px);
+    background: #1b1e24;
+    border: 1px solid #626873;
+    box-shadow: 5px 5px #16181d;
+    box-sizing: border-box;
+}
+
+.start-wordmark {
+    display: block;
+    width: min(360px, 100%);
+    margin: 0 auto 14px;
+}
+
+.start-credits {
+    display: grid;
+    gap: 4px;
+    margin: 0 0 22px;
+    color: #a9b0bd;
+    text-align: center;
+    font-size: 13px;
+    line-height: 1.35;
+}
+
+.start-credits strong {
+    color: #eceef2;
+    font-size: 15px;
+}
+
+.start-credits a {
+    color: #48c8dc;
+}
+
+#start-form label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.start-actions {
+    display: flex;
+    gap: 8px;
+}
+
+#player-name {
+    flex: 1;
+    min-width: 0;
+    background: #242830;
+    border: 1px solid #626873;
+    color: inherit;
+    padding: 9px 10px;
+    font: inherit;
+}
+
+#game-title button {
+    background: #48c8dc;
+    border: 1px solid #48c8dc;
+    color: #1b1e24;
+    padding: 9px 18px;
+    font: inherit;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+#game-title :focus-visible {
+    outline: 2px solid #eceef2;
+    outline-offset: 2px;
+}
+
+#name-hint, #leaderboard-status {
+    margin: 8px 0 0;
+    color: #a9b0bd;
+    font-size: 13px;
+    line-height: 1.35;
+}
+
+#leaderboard-heading {
+    margin: 22px 0 8px;
+    font-size: 18px;
+}
+
+.leaderboard-scroll {
+    max-height: min(34vh, 260px);
+    overflow: auto;
+}
+
+.leaderboard-scroll table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.leaderboard-scroll th, .leaderboard-scroll td {
+    padding: 8px 6px;
+    border-bottom: 1px solid #383d46;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.leaderboard-scroll td {
+    color: #eceef2;
+}
+
+.leaderboard-scroll th:first-child, .leaderboard-scroll td:first-child {
+    text-align: left;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.leaderboard-scroll th {
+    position: sticky;
+    top: 0;
+    background: #1b1e24;
+    color: #a9b0bd;
+}
+
+#game-title #leaderboard-more {
+    margin-top: 8px;
+    background: #242830;
+    border-color: #626873;
+    color: #eceef2;
+}

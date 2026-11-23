@@ -1,0 +1,3 @@
+-r requirements.txt
+pytest>=8
+pygbag==0.9.3        # the browser build: python -m tools.build_web

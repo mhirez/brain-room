@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# Local logs
+logs/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Best run (saved between sessions)
+saves/
+
+# Web build output (python -m tools.build_web)
+build/
+.wrangler/
+node_modules/
