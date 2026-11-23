@@ -146,7 +146,7 @@ class Enemy:
 
     def perceive(self, dt: float):
         event = self.senses.update(self, dt)
-        if event == "spotted":
+        if event == "spotted" and self.foe is not None:
             self.become_alert(self.foe.pos, shout=True)
         elif self.alert and self.senses.sees and self.fsm.current is SEARCH:
             self.say("!")
@@ -437,6 +437,10 @@ class Search(State):
             if e.timer > 1.4 + 2.2 * e.searched:
                 e.searched += 1
                 if e.searched > 2 or e.timer > 9:
+                    if e.side == "player":                         # overridden: forgets it, stays with you
+                        e.foe = None
+                        e.fsm.change(ESCORT)
+                        return
                     e.alert = False                                # gives up
                     e.senses.suspicion = 0.0
                     e.fsm.change(PATROL)
@@ -454,6 +458,7 @@ class Escort(State):
     name = "ESCORT"
 
     def enter(self, e):
+        e.room.coordinator.forget(e)
         e.timer = 0.0
         e.windup = 0.0
         e.think = 0.3

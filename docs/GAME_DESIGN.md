@@ -137,7 +137,9 @@ stateDiagram-v2
     INVESTIGATE --> COMBAT: spots the player
     COMBAT --> SEARCH: no contact for 5 s
     SEARCH --> COMBAT: spots the player
-    SEARCH --> PATROL: gives up
+    SEARCH --> PATROL: ARGUS unit gives up
+    SEARCH --> ESCORT: overridden unit gives up
+    ESCORT --> COMBAT: finds a new target
     COMBAT --> STUNNED: dazed
     STUNNED --> COMBAT: recovers
     COMBAT --> ESCORT: overridden, nobody to fight
@@ -164,7 +166,7 @@ away, next to a peek tile), firing (line of sight, range band, near cover, uncro
 (70-130° round from where an ally already attacks) and escape (far, hidden, never closer).
 Claims make the squad spread out. A* (8-way, octile, no corner cutting, cached) with smoothing;
 flankers pay +4 per tile the foe can see. The Coordinator hands out attack tokens and one
-flanker slot. Overridden robots don't use ARGUS's tokens.
+flanker slot. Overridden robots can attack and flank independently of ARGUS's slots.
 
 ### 4.6 ARGUS the director (`director.py`)
 
@@ -249,7 +251,7 @@ TITLE → INTRO → STORY → PLAY).
 | director softened | 15/20 | 2/20 |
 | v3.0: + crossfire and fire discipline | 15/20 | 2/20, median 11 of 12 rooms |
 | v3.1: every shot ricochets once (half damage per bounce) | 17/20 | 8/20 |
-| **current: racks stop bullets; floor 3 ends in the three-wave final stand** | **20/20** | **8/20** |
+| **4074d3a: racks stop bullets; floor 3 ends in the three-wave final stand** | **20/20** | **8/20** |
 
 Crossfire in bot games: ~1.2 robot-on-robot hits per room and 13 robots destroyed by their own
 side in 117 rooms. A player who uses it on purpose gets far more.
@@ -261,9 +263,9 @@ half damage. Even so, a 40-run comparison gives the average bot 11 escapes with 
 stayed at 95. The easier default is a deliberate choice for readability and feel; the report
 states it.
 
-### 7.3 Ablation (`tools/ablation.py`, 100 runs per condition, average bot, sub-levels 1-2, 95% CI, current build)
+### 7.3 Ablation (`tools/ablation.py`, 100 runs per condition, average bot, sub-levels 1-2, 95% CI)
 
-Current build: bullets stop in racks and bounce only off the outer walls; floors 1-3 otherwise as before.
+Measurements from `4074d3a`, before the override fixes. Bullets stop in racks and bounce only off the outer walls; floors 1-3 otherwise as before.
 
 | condition (bot never overrides) | hits on the player per room | robot-on-robot hits per room | seconds per room |
 |---|---|---|---|
@@ -322,7 +324,7 @@ game/ui/            render (rooms, wall lamps, decals), art (procedural robots, 
 game/scenes.py      TITLE → INTRO → STORY → PLAY (+ DEBUG), room after room → OVERRUN / IT GOT OUT
 tools/              autoplay (balance), ablation (parallel, confidence intervals), build_web
                     (browser build), brand (logo images), shots (README screenshots)
-tests/              83 tests
+tests/              91 tests
 ```
 
 ## 10. Video plan (2–3 minutes)

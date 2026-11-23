@@ -227,7 +227,9 @@ stateDiagram-v2
     INVESTIGATE --> COMBAT: spots you
     COMBAT --> SEARCH: lost you for 5 s
     SEARCH --> COMBAT: spots you
-    SEARCH --> PATROL: gives up
+    SEARCH --> PATROL: ARGUS unit gives up
+    SEARCH --> ESCORT: overridden unit gives up
+    ESCORT --> COMBAT: finds a new target
     COMBAT --> STUNNED: dazed / hit a wall
     STUNNED --> COMBAT
     COMBAT --> ESCORT: overridden and nobody left to fight
@@ -288,10 +290,10 @@ for action in sorted(scores, key=scores.get, reverse=True):
 
 ### 6.5 Squad tactics (`ai/tactics.py`)
 
-- **Coordinator (attack tokens)**: only 2 robots may attack at once (3 from floor 2), and never
+- **Coordinator (attack tokens)**: only 2 ARGUS robots may attack at once (3 from floor 2), and never
   two starting within 0.35 s. A robot must `acquire` a token to attack and `release` it after.
   This makes fights readable: the player is never hit by everyone at the same moment. Only one
-  robot may flank at a time (`take_flank`).
+  ARGUS robot may flank at a time (`take_flank`). Overridden robots attack and flank independently of these slots.
 - **TacticalMap**: scores tiles for a purpose. `cover_spot` (hidden from the threat, near cover,
   not crowded), `firing_spot` (at the right range with a clear line), `flank_spot` (sees the
   player from a different side than the attacker already on them), `escape_spot` (far from the
@@ -541,7 +543,7 @@ docstring's first line where it has one. Read it alongside the sections above.
 - `main()`
 - `main_web()`: In the browser: no command line, and the loop must give the page a turn every frame.
 
-### `game/ai/agent.py` (495 lines)
+### `game/ai/agent.py` (500 lines)
 
 *The shared enemy brain: body, senses, memory, movement, decision making, and the calm states.*
 
@@ -781,7 +783,7 @@ docstring's first line where it has one. Read it alongside the sections above.
   - `exit(m)`
   - `update(m, dt)`
 
-### `game/ai/senses.py` (67 lines)
+### `game/ai/senses.py` (70 lines)
 
 *What an enemy knows about its foe: only what it has seen or heard (imperfect information).*
 
@@ -847,7 +849,7 @@ docstring's first line where it has one. Read it alongside the sections above.
   - `update(s, dt)`
   - `finish(s)`
 
-### `game/ai/tactics.py` (175 lines)
+### `game/ai/tactics.py` (181 lines)
 
 *Squad tactics shared by every enemy in a room.*
 

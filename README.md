@@ -148,7 +148,9 @@ stateDiagram-v2
     INVESTIGATE --> COMBAT: spots you
     COMBAT --> SEARCH: lost you for 5 s
     SEARCH --> COMBAT: spots you
-    SEARCH --> PATROL: gives up
+    SEARCH --> PATROL: ARGUS unit gives up
+    SEARCH --> ESCORT: overridden unit gives up
+    ESCORT --> COMBAT: finds a new target
     COMBAT --> STUNNED: stunned
     STUNNED --> COMBAT
 ```
@@ -209,10 +211,10 @@ how **crossfire** happens.
 
 ### 4. Squad tactics and pathfinding
 
-- **Attack tokens**: a robot must hold a token to start an attack. Only two exist on floor 1 and
-  three from floor 2, and two attacks never start within 0.35 s of each other. Everyone else strafes,
+- **Attack tokens**: an ARGUS robot must hold a token to start an attack. Only two exist on floor 1 and
+  three from floor 2, and two ARGUS attacks never start within 0.35 s of each other. Everyone else strafes,
   repositions or flanks, so you can always tell who is about to shoot.
-- **One flanker at a time**, handed out by the squad coordinator.
+- **One ARGUS flanker at a time**. Overridden robots fight on the player’s side and can attack or flank independently of ARGUS’s slots.
 - **Tactical map**: tiles around a robot are scored as cover spots, firing spots, flank spots and
   escape spots. Tiles another robot has claimed score badly, so the squad spreads out.
 - **A\***: 8-way movement, an octile heuristic, no cutting corners, and smoothed paths. A flanker adds
@@ -283,7 +285,7 @@ such as `SNT-2.07` (a Sentry body, a generation-2 mind, unit 7). The full story 
 
 The claims above are tested, not just described. `python -m tools.ablation 100` makes an
 average-skill bot play floors 1 and 2 a hundred times per condition with fixed seeds, switching one
-AI feature off at a time (± is a 95% confidence interval). Re-run on this version on 23 November 2026:
+AI feature off at a time (± is a 95% confidence interval). The figures below were measured on commit `4074d3a` on 23 November 2026, before the override fixes.
 
 | ARGUS's side (the bot never overrides) | health the player loses per room | robot-on-robot hits per room | seconds per room |
 |---|---|---|---|
@@ -359,7 +361,7 @@ flowchart TB
 | `game/player.py`, `projectiles.py`, `bot.py` | the player, bullets and shells, and the bot that plays the title demo and the tests |
 | `game/profile.py`, `upgrades.py`, `codex.py`, `story.py`, `save.py`, `audio.py` | progress, upgrades, robot dossiers, ARGUS's lines, saving, and sound made in code |
 | `game/ui/` | flat drawing in code: rooms, robots, effects, HUD, Debug (`sync.py`), AI View (`xray.py`), intro film |
-| `tests/` | 83 automated tests (pytest) |
+| `tests/` | 91 automated tests (pytest) |
 | `tools/` | bots, AI experiments, the web build, logo images and screenshots |
 | `tools/web/`, `wrangler.jsonc` | the web page and the leaderboard service (Cloudflare) |
 | `docs/` | the project guide, design notes, story, images |
@@ -381,7 +383,7 @@ with no sprite images. The sound is generated in code when the game starts.
 
 ```bash
 pip install -r requirements-dev.txt
-python -m pytest                  # 83 automated tests
+python -m pytest                  # 91 automated tests
 python -m tools.autoplay 20       # a skilled and an average bot play 20 full runs each
 python -m tools.ablation 100      # switch AI features off one at a time (parallel, 95% CIs)
 python -m tools.build_web         # the browser build in build/web (--serve to try it locally)

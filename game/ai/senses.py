@@ -46,6 +46,9 @@ class Senses:
 
     def update(self, e, dt: float) -> str | None:
         room = e.room
+        if e.foe is None and e.side == "player":            # overridden, nobody to fight: nothing to watch
+            self.sees = False
+            return None
         p = e.foe or room.player
         d = distance(e.pos, p.pos)
         half = C.ALERT_HALF_ANGLE if e.alert else C.VIEW_HALF_ANGLE

@@ -24,6 +24,9 @@ from game.geometry import Point, Tile, angle_diff, angle_to, band, center, dista
 
 
 class Coordinator:
+    """ARGUS's attack tokens and flanker slot. Overridden robots (side 'player') don't use them: they
+    may always attack and flank, and never take a token or the slot from ARGUS's squad."""
+
     def __init__(self, slots: int = C.ATTACK_SLOTS, gap: float = C.ATTACK_GAP):
         self.slots = slots
         self.gap = gap
@@ -32,10 +35,12 @@ class Coordinator:
         self.flanker: int | None = None
 
     def can_attack(self, e, now: float) -> bool:
+        if e.side == "player":
+            return True
         return e.uid in self.holders or (len(self.holders) < self.slots and now - self.last_start >= self.gap)
 
     def acquire(self, e, now: float) -> bool:
-        if e.uid in self.holders:
+        if e.side == "player" or e.uid in self.holders:
             return True
         if not self.can_attack(e, now):
             return False
@@ -47,10 +52,11 @@ class Coordinator:
         self.holders.discard(e.uid)
 
     def flank_free(self, e) -> bool:
-        return self.flanker is None or self.flanker == e.uid
+        return e.side == "player" or self.flanker is None or self.flanker == e.uid
 
     def take_flank(self, e):
-        self.flanker = e.uid
+        if e.side != "player":
+            self.flanker = e.uid
 
     def drop_flank(self, e):
         if self.flanker == e.uid:
