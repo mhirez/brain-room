@@ -83,8 +83,7 @@ ARGUS cannot build new robot bodies fast enough, but it can copy minds instantly
 
 Currently in the game: generations are story and labels (serials, "generation n robots" in the
 floor banner), and ARGUS's adaptation is the director (player model + countermeasures). Making
-generations *literally* evolve (cloning the fittest robot's parameters into the next level) is
-proposal 6 in `docs/PROPOSALS.md`, pending approval.
+generations *literally* evolve (cloning the fittest robot's parameters into the next level) was proposed as a future extension.
 
 ## 6. Voice guide for ARGUS
 

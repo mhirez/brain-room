@@ -9,9 +9,7 @@ AI for Games individual coursework · Python + pygame-ce · v3.1 · 26 Sep 2026
 > procedural intro film, the lit and reactive 2D renderer, robot serials and generations, and
 > default ricochet.
 >
-> Companion documents: [LORE.md](LORE.md) (setting, robots, generations),
-> [GAMIFICATION.md](GAMIFICATION.md) (retention strategy), [NAMES.md](NAMES.md) (title
-> candidates), [PROPOSALS.md](PROPOSALS.md) (evolutionary robots, 3D, web build).
+> [LORE.md](LORE.md) describes the setting, robots and generations.
 
 ---
 
@@ -360,7 +358,6 @@ tests/              91 tests
 |---|---|
 | ✅ done | v3.0 data-center story, crossfire + fire discipline, upload clock, full ablation |
 | ✅ now | v3.1 intro film, lighting and procedural art, serials and generations, default ricochet, 57 tests, ablation re-run |
-| pending | Lecturer's view on proposal 6 (evolutionary robots, [PROPOSALS.md](PROPOSALS.md)); choose the final title, then start the public repository |
 | weeks 1–2 | Play it; tune debugger energy, override length and the upload time by feel |
 | weeks 3–4 | Optional: the core "revokes" overrides in phase 3; a smarter search (visit hiding spots) |
 | weeks 5–7 | Record the video (§10), write the report (§11) |
