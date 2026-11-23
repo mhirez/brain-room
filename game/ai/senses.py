@@ -35,36 +35,53 @@ class Senses:
         self.last_known = pos
         self.heard_at = now
 
-    def switch(self, e, foe):
-        """A new foe: what do I know about it?"""
-        if e.room.grid.line_of_sight(e.pos, foe.pos):
-            self.last_known = foe.pos
-            self.seen_at = e.room.time
+    def switch(self, enemy, foe):
+        """Remember where the new target was last seen or heard."""
+        self.last_known = foe.pos
+        if enemy.room.grid.line_of_sight(enemy.pos, foe.pos):
+            self.seen_at = enemy.room.time
         else:
-            self.last_known = foe.pos
-            self.heard_at = e.room.time - 2.0
+            self.heard_at = enemy.room.time - 2.0
 
-    def update(self, e, dt: float) -> str | None:
-        room = e.room
-        if e.foe is None and e.side == "player":            # overridden, nobody to fight: nothing to watch
-            self.sees = False
-            return None
-        p = e.foe or room.player
-        d = distance(e.pos, p.pos)
-        half = C.ALERT_HALF_ANGLE if e.alert else C.VIEW_HALF_ANGLE
-        reach = e.view_range * (1.2 if e.alert else 1.0)
-        in_view = d <= C.PROXIMITY or (d <= reach and abs(angle_diff(e.facing, angle_to(e.pos, p.pos))) <= half)
-        self.sees = in_view and room.grid.line_of_sight(e.pos, p.pos)
+    def update(self, enemy, dt: float) -> str | None:
+        target = enemy.foe
+        if target is None:
+            if enemy.side == "player":
+                self.sees = False
+                return None
+            target = enemy.room.player
+
+        sight_range = enemy.view_range
+        half_angle = C.VIEW_HALF_ANGLE
+        if enemy.alert:
+            sight_range *= 1.2
+            half_angle = C.ALERT_HALF_ANGLE
+
+        distance_to_target = distance(enemy.pos, target.pos)
+        # At close range the robot can notice a target in any direction.
+        in_view = distance_to_target <= C.PROXIMITY
+        if not in_view and distance_to_target <= sight_range:
+            direction = angle_to(enemy.pos, target.pos)
+            in_view = abs(angle_diff(enemy.facing, direction)) <= half_angle
+
+        self.sees = in_view and enemy.room.grid.line_of_sight(enemy.pos, target.pos)
         if self.sees:
-            self.last_known = p.pos
-            self.seen_at = room.time
-        if e.alert:
+            self.last_known = target.pos
+            self.seen_at = enemy.room.time
+        if enemy.alert:
             return None
-        if self.sees:
-            rate = (2.5 if d < 3 else 1.5 if d < 6 else 1.0) / C.NOTICE_TIME
-            self.suspicion = min(1.0, self.suspicion + rate * dt)
-            if self.suspicion >= 1.0:
-                return "spotted"
-        else:
+
+        if not self.sees:
             self.suspicion = max(0.0, self.suspicion - dt * 0.4)
+            return None
+
+        notice_speed = 1.0
+        if distance_to_target < 3:
+            notice_speed = 2.5
+        elif distance_to_target < 6:
+            notice_speed = 1.5
+        rate = notice_speed / C.NOTICE_TIME
+        self.suspicion = min(1.0, self.suspicion + rate * dt)
+        if self.suspicion >= 1.0:
+            return "spotted"
         return None

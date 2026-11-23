@@ -296,8 +296,11 @@ class Play(Scene):
             game.aim_px = (aim[0] * TILE, aim[1] * TILE)
             return move, aim, firing, dash, hack
         keys = pygame.key.get_pressed()
-        move = ((keys[pygame.K_d] or keys[pygame.K_RIGHT]) - (keys[pygame.K_a] or keys[pygame.K_LEFT]),
-                (keys[pygame.K_s] or keys[pygame.K_DOWN]) - (keys[pygame.K_w] or keys[pygame.K_UP]))
+        left = keys[pygame.K_a] or keys[pygame.K_LEFT]
+        right = keys[pygame.K_d] or keys[pygame.K_RIGHT]
+        up = keys[pygame.K_w] or keys[pygame.K_UP]
+        down = keys[pygame.K_s] or keys[pygame.K_DOWN]
+        move = (right - left, down - up)
         mx, my = game.mouse_position()
         game.aim_px = (mx, my)
         firing = pygame.mouse.get_pressed()[0] or keys[pygame.K_SPACE]

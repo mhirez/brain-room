@@ -235,37 +235,43 @@ class Enemy:
         return True
 
     def choose_foe(self):
-        """Target selection: who is the biggest threat right now? (utility, with hysteresis)"""
-        grid = self.room.grid
-        scores = {}
-        best, best_score = None, -math.inf
-        for h in self.hostiles():
-            d = distance(self.pos, h.pos)
-            seen = d <= self.view_range * 1.2 and grid.line_of_sight(self.pos, h.pos)
-            if not seen and h is not self.foe:
+        """Choose the highest-scoring target we can see or already know about."""
+        self.foe_scores = {}
+        best_target = None
+        best_score = -math.inf
+        for target in self.hostiles():
+            target_distance = distance(self.pos, target.pos)
+            in_range = target_distance <= self.view_range * 1.2
+            visible = in_range and self.room.grid.line_of_sight(self.pos, target.pos)
+            if not visible and target is not self.foe:
                 continue
-            s = 1.0 / (1 + d / 6)
-            if h is self.player:
-                s += 0.25
-            elif h.side == "player":
-                s += 0.45                               # a traitor in the ranks: deal with it first
-            if h is self.last_attacker and self.now - self.hit_time < 3:
-                s += 0.5
-            s += 0.2 * (1 - h.health)
-            if h is self.foe:
-                s += 0.2
-            if not seen:
-                s -= 0.4
-            scores[getattr(h, "name", "YOU") if h is not self.player else "YOU"] = s
-            if s > best_score:
-                best, best_score = h, s
-        self.foe_scores = scores
-        if best is not self.foe:
-            self.foe = best
-            if best is not None:
-                self.senses.switch(self, best)
-                if best is not self.player:
-                    self.say("!")
+
+            score = 1.0 / (1 + target_distance / 6)
+            if target is self.player:
+                score += 0.25
+            elif target.side == "player":
+                score += 0.45  # An overridden robot is a threat to its old squad.
+            if target is self.last_attacker and self.now - self.hit_time < 3:
+                score += 0.5
+            score += 0.2 * (1 - target.health)
+            if target is self.foe:
+                score += 0.2
+            if not visible:
+                score -= 0.4
+
+            name = "YOU" if target is self.player else getattr(target, "name", "YOU")
+            self.foe_scores[name] = score
+            if score > best_score:
+                best_target = target
+                best_score = score
+
+        if best_target is self.foe:
+            return
+        self.foe = best_target
+        if best_target is not None:
+            self.senses.switch(self, best_target)
+            if best_target is not self.player:
+                self.say("!")
 
     def decide(self):
         """Score every option, keep the best feasible one (with a bonus for the current)."""

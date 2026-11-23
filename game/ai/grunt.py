@@ -54,33 +54,55 @@ class Grunt(Enemy):
         return ENGAGE
 
     def states_for(self, action):
-        return {"shoot": (AIM, FIRE), "cover": (TAKE_COVER, HIDE), "strafe": (STRAFE,),
-                "reposition": (REPOSITION,), "flank": (FLANK,)}[action]
+        return {
+            "shoot": (AIM, FIRE),
+            "cover": (TAKE_COVER, HIDE),
+            "strafe": (STRAFE,),
+            "reposition": (REPOSITION,),
+            "flank": (FLANK,),
+        }[action]
+
+    def allies_engaging_foe(self):
+        allies = []
+        for robot in self.room.enemies:
+            if robot is self or robot.side != self.side:
+                continue
+            if robot.alert and robot.senses.sees and robot.foe is self.foe:
+                allies.append(robot)
+        return allies
 
     def options(self):
-        room, s = self.room, self.senses
-        sees = s.sees
-        d = distance(self.pos, self.foe.pos) if sees else distance(self.pos, self.target())
-        health = self.health
-        fire = self.under_fire()
-        fresh = s.age(self.now) < C.MEMORY_TIME
-        token = room.coordinator.can_attack(self, self.now)
-        self.blocked = sees and not self.clear_shot(self.foe.pos)
-        o = {}
-        o["shoot"] = (0.6 + 0.2 * health + 0.2 * band(d, 2.5, 8.5)) if (
-            sees and self.cooldown <= 0 and token and d < self.view_range and not self.blocked) else 0.0
-        o["cover"] = 0.0 if self.now < self.cover_ban else (
-            clamp(0.75 * (1 - health) + 0.35 * fire, 0, 1.2) if (health < 0.6 or fire > 0.5) else 0.0)
-        o["strafe"] = 0.35 + 0.15 * band(d, 3, 8) + (0.2 if self.blocked else 0.0) if sees else 0.0
-        if not sees:
-            o["reposition"] = 0.5 if fresh else 0.0
-        else:
-            o["reposition"] = 0.45 if (d < 2.5 or d > 9) else 0.0
-        engaged = sum(1 for e in room.enemies if e is not self and e.side == self.side and e.alert
-                      and e.senses.sees and e.foe is self.foe)
-        o["flank"] = 0.62 if ((not sees or not token) and fresh and health > 0.4 and engaged >= 1
-                              and room.coordinator.flank_free(self)) else 0.0
-        return o
+        scores = {"shoot": 0.0, "cover": 0.0, "strafe": 0.0, "reposition": 0.0, "flank": 0.0}
+        sees_foe = self.senses.sees
+        target_distance = distance(self.pos, self.target())
+        remembers_foe = self.senses.age(self.now) < C.MEMORY_TIME
+        can_attack = self.room.coordinator.can_attack(self, self.now)
+        self.blocked = sees_foe and not self.clear_shot(self.foe.pos)
+
+        if sees_foe and can_attack and self.cooldown <= 0 and not self.blocked:
+            if target_distance < self.view_range:
+                range_bonus = 0.2 * band(target_distance, 2.5, 8.5)
+                scores["shoot"] = 0.6 + 0.2 * self.health + range_bonus
+
+        incoming_fire = self.under_fire()
+        if self.now >= self.cover_ban and (self.health < 0.6 or incoming_fire > 0.5):
+            cover_score = 0.75 * (1 - self.health) + 0.35 * incoming_fire
+            scores["cover"] = clamp(cover_score, 0, 1.2)
+
+        if sees_foe:
+            scores["strafe"] = 0.35 + 0.15 * band(target_distance, 3, 8)
+            if self.blocked:
+                scores["strafe"] += 0.2
+            if target_distance < 2.5 or target_distance > 9:
+                scores["reposition"] = 0.45
+        elif remembers_foe:
+            scores["reposition"] = 0.5
+
+        # Go around the target while an ally keeps it busy.
+        if remembers_foe and self.health > 0.4 and (not sees_foe or not can_attack):
+            if self.room.coordinator.flank_free(self) and self.allies_engaging_foe():
+                scores["flank"] = 0.62
+        return scores
 
     def feasible(self, action):
         tactics = self.room.tactics
@@ -93,8 +115,7 @@ class Grunt(Enemy):
             self.spot_tile = tactics.firing_spot(self, self.target(), 3.0, 8.0)
             return self.spot_tile is not None or self.senses.last_known is not None
         elif action == "flank":
-            pinners = [e for e in self.room.enemies if e is not self and e.side == self.side and e.alert
-                       and e.senses.sees and e.foe is self.foe]
+            pinners = self.allies_engaging_foe()
             if not pinners:
                 return False
             anchor = min(pinners, key=lambda e: distance(e.pos, self.foe.pos))
@@ -109,77 +130,86 @@ class Grunt(Enemy):
 class Engage(State):
     name = "ENGAGE"
 
-    def enter(self, g):
-        g.think = REACTION
-        g.windup = 0.0
-        g.crouch = False
-        g.room.tactics.claim(g, None)
+    def enter(self, sentry):
+        sentry.think = REACTION
+        sentry.windup = 0.0
+        sentry.crouch = False
+        sentry.room.tactics.claim(sentry, None)
 
-    def update(self, g, dt):
-        g.brake(dt)
-        g.face_foe(dt)
-        g.rethink(dt)
+    def update(self, sentry, dt):
+        sentry.brake(dt)
+        sentry.face_foe(dt)
+        sentry.rethink(dt)
 
 
 class Aim(State):
     name = "AIM"
 
-    def enter(self, g):
-        g.path = []
-        g.windup = 0.0
-        g.locked = False
-        g.blind = 0.0
-        g.aim = angle_to(g.pos, g.target())
-        g.fan = FAN
+    def enter(self, sentry):
+        sentry.path = []
+        sentry.windup = 0.0
+        sentry.locked = False
+        sentry.blind = 0.0
+        sentry.aim = angle_to(sentry.pos, sentry.target())
+        sentry.fan = FAN
 
-    def update(self, g, dt):
-        g.brake(dt)
-        windup = WINDUP * g.room.tuning["windup"]
-        g.windup = min(1.0, g.windup + dt / windup)
-        if not g.locked:
-            if g.senses.sees:
-                g.blind = 0.0
-                now = angle_to(g.pos, g.foe.pos)
-                ahead = angle_to(g.pos, g.lead(C.ENEMY_BULLET_SPEED * g.room.tuning["bullet"]))
-                half = angle_diff(now, ahead) / 2
-                g.fan = half if abs(half) > FAN else math.copysign(FAN, half or 1.0)
-                g.aim = now + half
+    def update(self, sentry, dt):
+        sentry.brake(dt)
+        windup = WINDUP * sentry.room.tuning["windup"]
+        sentry.windup = min(1.0, sentry.windup + dt / windup)
+        if not sentry.locked:
+            if sentry.senses.sees:
+                sentry.blind = 0.0
+                self.track_target(sentry)
             else:
-                g.blind += dt
-                if g.blind > 0.3:                       # lost the shot: give the token back
-                    g.room.coordinator.release(g)
-                    g.windup = 0.0
-                    g.fsm.change(ENGAGE)
+                sentry.blind += dt
+                if sentry.blind > 0.3:                       # lost the shot: give the token back
+                    sentry.room.coordinator.release(sentry)
+                    sentry.windup = 0.0
+                    sentry.fsm.change(ENGAGE)
                     return
-            g.facing = g.aim
-            if g.windup >= 1 - C.LOCK_TIME / windup:
-                g.locked = True
-        if g.windup >= 1:
-            g.fsm.change(FIRE)
+            sentry.facing = sentry.aim
+            if sentry.windup >= 1 - C.LOCK_TIME / windup:
+                sentry.locked = True
+        if sentry.windup >= 1:
+            sentry.fsm.change(FIRE)
+
+    def track_target(self, sentry):
+        bullet_speed = C.ENEMY_BULLET_SPEED * sentry.room.tuning["bullet"]
+        current_angle = angle_to(sentry.pos, sentry.foe.pos)
+        predicted_angle = angle_to(sentry.pos, sentry.lead(bullet_speed))
+        half_spread = angle_diff(current_angle, predicted_angle) / 2
+        sentry.aim = current_angle + half_spread
+        # Keep a small spread even when the target stands still.
+        sentry.fan = half_spread
+        if abs(half_spread) <= FAN:
+            sentry.fan = FAN if half_spread >= 0 else -FAN
 
 
 class Fire(State):
     name = "FIRE"
 
-    def enter(self, g):
-        g.shots_left = BURST
-        g.timer = 0.0
+    def enter(self, sentry):
+        sentry.shots_left = BURST
+        sentry.timer = 0.0
 
-    def update(self, g, dt):
-        g.brake(dt)
-        g.timer -= dt
-        if g.timer <= 0 and g.shots_left > 0:
-            a = g.aim + (g.shots_left - 2) * g.fan
-            g.room.enemy_shot(g, muzzle(g, a), a, C.ENEMY_BULLET_SPEED * g.room.tuning["bullet"])
-            g.shots_left -= 1
-            g.timer = BURST_GAP
-        if g.shots_left == 0 and g.timer <= 0:
-            g.windup = 0.0
-            g.locked = False
-            g.room.coordinator.release(g)
-            g.cooldown = g.room.rng.uniform(0.9, 1.4)
-            g.action = ""
-            g.fsm.change(ENGAGE)
+    def update(self, sentry, dt):
+        sentry.brake(dt)
+        sentry.timer -= dt
+        if sentry.timer <= 0 and sentry.shots_left > 0:
+            shot_angle = sentry.aim + (sentry.shots_left - 2) * sentry.fan
+            start = muzzle(sentry, shot_angle)
+            speed = C.ENEMY_BULLET_SPEED * sentry.room.tuning["bullet"]
+            sentry.room.enemy_shot(sentry, start, shot_angle, speed)
+            sentry.shots_left -= 1
+            sentry.timer = BURST_GAP
+        if sentry.shots_left == 0 and sentry.timer <= 0:
+            sentry.windup = 0.0
+            sentry.locked = False
+            sentry.room.coordinator.release(sentry)
+            sentry.cooldown = sentry.room.rng.uniform(0.9, 1.4)
+            sentry.action = ""
+            sentry.fsm.change(ENGAGE)
 
 
 class Strafe(State):

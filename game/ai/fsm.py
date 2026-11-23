@@ -40,7 +40,8 @@ class StateMachine:
     def change(self, new_state: State):
         if self.current is not None:
             self.current.exit(self.owner)
-        self.previous, self.current = self.current, new_state
+        self.previous = self.current
+        self.current = new_state
         self.time_in_state = 0.0
         self.history.append(new_state.name)
         new_state.enter(self.owner)
